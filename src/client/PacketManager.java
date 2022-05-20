@@ -10,7 +10,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 
-public class PacketManager implements Runnable{
+public class PacketManager implements Runnable {
 
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;

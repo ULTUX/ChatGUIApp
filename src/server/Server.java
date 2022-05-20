@@ -77,12 +77,13 @@ public class Server extends JFrame implements ActionListener, Runnable {
     }
 
     public static void main(String[] args) {
-        new Server("Tutu");
+        new Server("Server");
     }
 
     private void quit() throws IOException {
         exit = true;
         serverSocket.close();
+        pairManagers.forEach(ServerClientPairManager::dispose);
         setVisible(false);
         dispose();
 
