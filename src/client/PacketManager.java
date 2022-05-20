@@ -18,11 +18,11 @@ public class PacketManager implements Runnable{
     private String host;
     private int port;
     private Socket socket;
-    private ConnectionStatus status = ConnectionStatus.DISCONNECTED;
+    private ConnectionStatus status;
     private ChatWindow chatHandler;
     private boolean exit = false;
     private String name;
-    public PacketManager(Client client, Socket socket, ChatWindow chatHandler) throws IOException, UnknownPacketException {
+    public PacketManager(Client client, Socket socket, ChatWindow chatHandler, ClientData pair) throws IOException, UnknownPacketException {
         this.socket = socket;
         this.objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
         this.objectInputStream = new ObjectInputStream(socket.getInputStream());
@@ -31,7 +31,6 @@ public class PacketManager implements Runnable{
         this.chatHandler = chatHandler;
         chatHandler.setCurrentPacketManager(this);
         new Thread(this).start();
-        sendPacket(new HandshakePacket(InetAddress.getLocalHost().getHostAddress(), client.name, port));
     }
 
     public void sendMessage(String message) throws ClientNotConnectedException, IOException {

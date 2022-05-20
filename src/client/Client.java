@@ -13,6 +13,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.net.*;
 import java.util.ArrayList;
@@ -118,16 +119,11 @@ public class Client implements Runnable, ActionListener{
 
     public void connectToClient(ClientData data) throws IOException {
         int port = data.getPort();
-        String hostName = data.getHostName();
         if (port != PORT){
-            Socket socket = new Socket(hostName, port);
+            Socket socket = new Socket(serverAddress, 2122);
             if (socket.isConnected()){
-                System.out.println("CONNECTED TO SOCKET");
-                try {
-                    packetManagers.add(new PacketManager(this, socket, new ChatWindow("Połączenie", this)));
-                } catch (UnknownPacketException e) {
-                    e.printStackTrace();
-                }
+                new ObjectOutputStream(socket.getOutputStream()).writeObject(new PairPacket(new ClientData(this.name, InetAddress.getLocalHost().getHostAddress(), PORT), data));
+                System.out.println("CONNECTED TO SOCKET for pairing");
             }
         }
     }
@@ -192,16 +188,12 @@ public class Client implements Runnable, ActionListener{
             while (!exit){
                 Socket socket = serverSocket.accept();
                 if (socket != null){
-                    try {
-                        System.out.println("SOMEONE CONNECTED TO SOCKET!");
-                        packetManagers.add(new PacketManager(this, socket, new ChatWindow("Połączenie", this)));
-                        frame.setVisible(false);
-                    } catch (UnknownPacketException e) {
-                        e.printStackTrace();
-                    }
+                    System.out.println("SOMEONE CONNECTED TO SOCKET!");
+                    packetManagers.add(new PacketManager(this, socket, new ChatWindow("Połączenie", this), null));
+                    frame.setVisible(false);
                 }
             }
-        } catch (SocketException ignored){}
+        } catch (SocketException | UnknownPacketException ignored){}
         catch (IOException e) {
             e.printStackTrace();
         }

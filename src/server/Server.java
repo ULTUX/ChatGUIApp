@@ -32,6 +32,9 @@ public class Server extends JFrame implements ActionListener, Runnable {
     private boolean exit = false;
     private ServerSocket serverSocket;
     private String hostName;
+
+    private ArrayList<ServerClientPairManager> pairManagers = new ArrayList<>();
+
     {
         try {
             hostName = InetAddress.getLocalHost().getHostAddress();
@@ -64,10 +67,11 @@ public class Server extends JFrame implements ActionListener, Runnable {
         setFont();
         setVisible(true);
         new Thread(this).start();
+        pairManagers = new ArrayList<>();
     }
 
-    private void setFont(){
-        for (Component comp : panel.getComponents()){
+    private void setFont() {
+        for (Component comp : panel.getComponents()) {
             comp.setFont(FONT);
         }
     }
@@ -99,30 +103,34 @@ public class Server extends JFrame implements ActionListener, Runnable {
     public void run() {
         try {
             serverSocket = new ServerSocket(PORT);
-            statusLabel.setText("Serwer działa na porcie: "+PORT);
-            while (!exit){
+            statusLabel.setText("Serwer działa na porcie: " + PORT);
+            while (!exit) {
                 Socket socket = serverSocket.accept();
                 manageClientConnection(socket);
 
             }
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
     }
 
-    public void removeClient(ClientData client){
+    public void removeClient(ClientData client) {
         if (list.contains(client)) list.removeElement(client);
     }
 
-    public void addClient(ClientData client){
+    public void addClient(ClientData client) {
         if (!list.contains(client)) list.addElement(client);
         System.out.println(client.toString());
+    }
+
+    public void removePairManager(ServerClientPairManager manager) {
+        pairManagers.remove(manager);
     }
 
     public void manageClientConnection(Socket socket) {
         try (
                 ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
                 ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream())
-        )
-        {
+        ) {
             Packet gotPacket = (Packet) input.readObject();
 
             switch (gotPacket.getPacketType()) {
@@ -141,6 +149,9 @@ public class Server extends JFrame implements ActionListener, Runnable {
 
                     } else throw new UnknownClientException("That client is not connected with the server.");
                     break;
+                case PAIR_CLIENT:
+                    pairManagers.add(new ServerClientPairManager(this, new ClientData(gotPacket.getName(), gotPacket.getHostName(), gotPacket.getPort()), ((PairPacket) gotPacket).getToConnect()));
+
             }
 
         } catch (IOException | ClassNotFoundException | UnknownPacketException e) {
@@ -169,7 +180,7 @@ public class Server extends JFrame implements ActionListener, Runnable {
     private void respondToGetPacket(ObjectOutputStream stream) throws IOException, UnknownPacketException {
         Enumeration<ClientData> enumeration = list.elements();
         ArrayList<ClientData> response = new ArrayList<>();
-        while (enumeration.hasMoreElements()){
+        while (enumeration.hasMoreElements()) {
             ClientData data = enumeration.nextElement();
             response.add(data);
         }
@@ -182,17 +193,17 @@ public class Server extends JFrame implements ActionListener, Runnable {
     private void removeClient(String name, String hostname, int port) {
         Enumeration<ClientData> clientDataEnumeration = list.elements();
         ClientData toCompare = new ClientData(name, hostname, port);
-        while (clientDataEnumeration.hasMoreElements()){
+        while (clientDataEnumeration.hasMoreElements()) {
             ClientData data = clientDataEnumeration.nextElement();
             if (data.equals(toCompare)) list.removeElement(data);
         }
     }
 
 
-    private boolean isClientConnected(String name, String hostname, int port){
+    private boolean isClientConnected(String name, String hostname, int port) {
         Enumeration<ClientData> elements = list.elements();
         ClientData clientData = new ClientData(name, hostname, port);
-        while (elements.hasMoreElements()){
+        while (elements.hasMoreElements()) {
             if (elements.nextElement().equals(clientData)) return true;
         }
         return false;
